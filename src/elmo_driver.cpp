@@ -181,7 +181,7 @@ class ElmoDriver : public ECDriver {
   }
 
   virtual void updateInputs() {
-    uint32_t pos, vel;
+    int32_t pos, vel;
     int16_t statusword = 0;
 
     statusword = statusword_pdo_.read();
