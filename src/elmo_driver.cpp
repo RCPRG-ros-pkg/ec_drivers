@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Robot Control and Pattern Recognition Group, Warsaw University of Technology.
+ * Copyright (c) 2015-2016, Robot Control and Pattern Recognition Group, Warsaw University of Technology.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -80,20 +80,30 @@ class ElmoDriver : public ECDriver {
 
   ElmoDriver(const std::string &name)
       : ECDriver(name),
-        statusword_pdo_(0x6041, 0),
-        position_pdo_(0x6064, 0),
-        velocity_pdo_(0x606C, 0),
-        current_pdo_(0x6077, 0),
-        controlword_pdo_(0x6040, 0),
-        mode_of_operation_pdo_(0x6060, 0),
-        position_command_pdo_(0x607A, 0),
-        velocity_command_pdo_(0x60FF, 0),
-        current_command_pdo_(0x6071, 0),
+        statusword_pdo_(0),
+        position_pdo_(0),
+        velocity_pdo_(0),
+        current_pdo_(0),
+        controlword_pdo_(0),
+        mode_of_operation_pdo_(0),
+        position_command_pdo_(0),
+        velocity_command_pdo_(0),
+        current_command_pdo_(0),
         control_mode_(HOMING),
         enable_(false),
         homing_(false),
         reset_fault_(false),
         homing_done_(true) {
+
+//        statusword_pdo_(0x6041, 0),
+//        position_pdo_(0x6064, 0),
+//        velocity_pdo_(0x606C, 0),
+//        current_pdo_(0x6077, 0),
+//        controlword_pdo_(0x6040, 0),
+//        mode_of_operation_pdo_(0x6060, 0),
+//        position_command_pdo_(0x607A, 0),
+//        velocity_command_pdo_(0x60FF, 0),
+//        current_command_pdo_(0x6071, 0),
 
     this->provides()->addPort("motor_position", motor_position_port_);
     this->provides()->addPort("motor_velocity", motor_velocity_port_);
@@ -117,13 +127,23 @@ class ElmoDriver : public ECDriver {
   }
 
   virtual bool configureHook(const YAML::Node &cfg) {
+  
+    int subnode;
+
+    if (cfg["subnode"]) {
+      subnode = cfg["subnode"].as<int>();
+    } else {
+      subnode = 0;
+    }
+  
+  
     if (cfg["interpolation_period"]) {
       YAML::Node intp = cfg["interpolation_period"];
       uint8_t value = intp["value"].as<int>();
       int8_t index = intp["index"].as<int>();
 
-      slave_->addSDOConfig(0x60C2, 1, value);
-      slave_->addSDOConfig(0x60C2, 2, index);
+      slave_->addSDOConfig(0x60C2 + subnode * 0x0800, 1, value);
+      slave_->addSDOConfig(0x60C2 + subnode * 0x0800, 2, index);
     } else {
       RTT::log(RTT::Error) << "Driver require parameter interpolation_period" << RTT::endlog();
       return false;
@@ -133,13 +153,13 @@ class ElmoDriver : public ECDriver {
       YAML::Node home = cfg["homing"];
       int8_t homing_mode = home["mode"].as<int>();
       if (homing_mode > 0) {
-        slave_->addSDOConfig(0x6098, 0, homing_mode);
+        slave_->addSDOConfig(0x6098 + subnode * 0x0800, 0, homing_mode);
         uint32_t spdh = home["speed_high"].as<unsigned int>();
         uint32_t spdl = home["speed_low"].as<unsigned int>();
-        slave_->addSDOConfig(0x6099, 1, spdh);
-        slave_->addSDOConfig(0x6099, 2, spdl);
+        slave_->addSDOConfig(0x6099 + subnode * 0x0800, 1, spdh);
+        slave_->addSDOConfig(0x6099 + subnode * 0x0800, 2, spdl);
         uint32_t acc = home["acceleration"].as<unsigned int>();
-        slave_->addSDOConfig(0x609A, 0, acc);
+        slave_->addSDOConfig(0x609A + subnode * 0x0800, 0, acc);
         homing_done_ = false;
       }
     }
@@ -160,19 +180,29 @@ class ElmoDriver : public ECDriver {
       return false;
     }
 
-    this->addPDOEntry(&statusword_pdo_);
-    this->addPDOEntry(&position_pdo_);
-    this->addPDOEntry(&velocity_pdo_);
-    this->addPDOEntry(&current_pdo_);
-    this->addPDOEntry(&controlword_pdo_);
-    this->addPDOEntry(&mode_of_operation_pdo_);
+    statusword_pdo_ = new ECPDOEntry<int16_t>(0x6041 + subnode * 0x0800, 0);
+    position_pdo_ = new ECPDOEntry<int32_t>(0x6064 + subnode * 0x0800, 0);
+    velocity_pdo_ = new ECPDOEntry<int32_t>(0x606C + subnode * 0x0800, 0);
+    current_pdo_ = new ECPDOEntry<int16_t>(0x6077 + subnode * 0x0800, 0);
+    controlword_pdo_ = new ECPDOEntry<int16_t>(0x6040 + subnode * 0x0800, 0);
+    mode_of_operation_pdo_ = new ECPDOEntry<uint8_t>(0x6060 + subnode * 0x0800, 0);
+    position_command_pdo_ = new ECPDOEntry<int32_t>(0x607A + subnode * 0x0800, 0);
+    velocity_command_pdo_ = new ECPDOEntry<int32_t>(0x60FF + subnode * 0x0800, 0);
+    current_command_pdo_ = new ECPDOEntry<int16_t>(0x6071 + subnode * 0x0800, 0);
+
+    this->addPDOEntry(statusword_pdo_);
+    this->addPDOEntry(position_pdo_);
+    this->addPDOEntry(velocity_pdo_);
+    this->addPDOEntry(current_pdo_);
+    this->addPDOEntry(controlword_pdo_);
+    this->addPDOEntry(mode_of_operation_pdo_);
 
     if (control_mode_ == CYCLIC_POSITION) {
-      this->addPDOEntry(&position_command_pdo_);
+      this->addPDOEntry(position_command_pdo_);
     } else if (control_mode_ == CYCLIC_VELOCITY) {
-      this->addPDOEntry(&velocity_command_pdo_);
+      this->addPDOEntry(velocity_command_pdo_);
     } else if (control_mode_ == CYCLIC_CURRENT) {
-      this->addPDOEntry(&current_command_pdo_);
+      this->addPDOEntry(current_command_pdo_);
     } else {
       return false;
     }
@@ -184,11 +214,11 @@ class ElmoDriver : public ECDriver {
     int32_t pos, vel;
     int16_t statusword = 0;
 
-    statusword = statusword_pdo_.read();
+    statusword = statusword_pdo_->read();
     state_ = getState(statusword);
 
-    pos = position_pdo_.read();
-    vel = velocity_pdo_.read();
+    pos = position_pdo_->read();
+    vel = velocity_pdo_->read();
 
     motor_position_port_.write(pos);
     motor_velocity_port_.write(vel);
@@ -251,9 +281,9 @@ class ElmoDriver : public ECDriver {
     }
 
     if (homing_done_) {
-      mode_of_operation_pdo_.write(control_mode_);
+      mode_of_operation_pdo_->write(control_mode_);
     } else {
-      mode_of_operation_pdo_.write(HOMING);
+      mode_of_operation_pdo_->write(HOMING);
       if (homing_) {
         cw |= 0x10;
       }
@@ -262,13 +292,13 @@ class ElmoDriver : public ECDriver {
     if (state_ != OPERATION_ENABLED || homing_done_ == false) {
       switch (control_mode_) {
         case CYCLIC_CURRENT:
-          current_command_pdo_.write(0);
+          current_command_pdo_->write(0);
           break;
         case CYCLIC_VELOCITY:
-          velocity_command_pdo_.write(0);
+          velocity_command_pdo_->write(0);
           break;
         case CYCLIC_POSITION:
-          position_command_pdo_.write(position_pdo_.read());
+          position_command_pdo_->write(position_pdo_->read());
           break;
       }
     } else {
@@ -276,25 +306,25 @@ class ElmoDriver : public ECDriver {
         case CYCLIC_CURRENT:
           double cur;
           if (motor_current_command_port_.read(cur) == RTT::NewData) {
-            current_command_pdo_.write(cur);
+            current_command_pdo_->write(cur);
           }
           break;
         case CYCLIC_VELOCITY:
           double vel;
           if (motor_velocity_command_port_.read(vel) == RTT::NewData) {
-            velocity_command_pdo_.write(vel);
+            velocity_command_pdo_->write(vel);
           }
           break;
         case CYCLIC_POSITION:
           double pos;
           if (motor_position_command_port_.read(pos) == RTT::NewData) {
-            position_command_pdo_.write(pos);
+            position_command_pdo_->write(pos);
           }
           break;
       }
     }
 
-    controlword_pdo_.write(cw);
+    controlword_pdo_->write(cw);
   }
 
  private:
@@ -356,16 +386,16 @@ class ElmoDriver : public ECDriver {
     }
   }
 
-  ECPDOEntry<int16_t> statusword_pdo_;
-  ECPDOEntry<int32_t> position_pdo_;
-  ECPDOEntry<int32_t> velocity_pdo_;
-  ECPDOEntry<int16_t> current_pdo_;
+  ECPDOEntry<int16_t> *statusword_pdo_;
+  ECPDOEntry<int32_t> *position_pdo_;
+  ECPDOEntry<int32_t> *velocity_pdo_;
+  ECPDOEntry<int16_t> *current_pdo_;
 
-  ECPDOEntry<int16_t> controlword_pdo_;
-  ECPDOEntry<uint8_t> mode_of_operation_pdo_;
-  ECPDOEntry<int32_t> position_command_pdo_;
-  ECPDOEntry<int32_t> velocity_command_pdo_;
-  ECPDOEntry<int16_t> current_command_pdo_;
+  ECPDOEntry<int16_t> *controlword_pdo_;
+  ECPDOEntry<uint8_t> *mode_of_operation_pdo_;
+  ECPDOEntry<int32_t> *position_command_pdo_;
+  ECPDOEntry<int32_t> *velocity_command_pdo_;
+  ECPDOEntry<int16_t> *current_command_pdo_;
 
   RTT::OutputPort<double> motor_position_port_;
   RTT::OutputPort<double> motor_velocity_port_;
