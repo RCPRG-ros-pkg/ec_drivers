@@ -33,6 +33,7 @@
 #include <ec_hardware/ECDriver.h>
 #include <ec_hardware/ECDriverFactory.h>
 #include <ec_hardware/ECPDOEntry.h>
+#include <string>
 
 const uint16_t SW_ReadyToSwitchOn_Mask = 0x0001;
 const uint16_t SW_SwitchedOn_Mask = 0x0002;
@@ -48,86 +49,124 @@ const uint16_t SW_TargetReached_Mask = 0x0400;
 const uint16_t SW_InternalLimitActive_Mask = 0x0800;
 const uint16_t SW_HomingComplete_Mask = 0x1000;
 
-const uint16_t NotReadyToSwitchOn_Mask = SW_ReadyToSwitchOn_Mask | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask | SW_Fault_Mask | SW_SwitchOnDisabled_Mask;
+const uint16_t NotReadyToSwitchOn_Mask = SW_ReadyToSwitchOn_Mask
+    | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask | SW_Fault_Mask
+    | SW_SwitchOnDisabled_Mask;
 const uint16_t NotReadyToSwitchOn_Pattern = 0x0000;
 
-const uint16_t SwitchOnDisabled_Mask = SW_ReadyToSwitchOn_Mask | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask | SW_Fault_Mask | SW_SwitchOnDisabled_Mask;
+const uint16_t SwitchOnDisabled_Mask = SW_ReadyToSwitchOn_Mask
+    | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask | SW_Fault_Mask
+    | SW_SwitchOnDisabled_Mask;
 const uint16_t SwitchOnDisabled_Pattern = SW_SwitchOnDisabled_Mask;
 
-const uint16_t ReadyToSwitchOn_Mask = SW_ReadyToSwitchOn_Mask | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask | SW_Fault_Mask | SW_QuickStop_Mask | SW_SwitchOnDisabled_Mask;
-const uint16_t ReadyToSwitchOn_Pattern = SW_ReadyToSwitchOn_Mask | SW_QuickStop_Mask;
+const uint16_t ReadyToSwitchOn_Mask = SW_ReadyToSwitchOn_Mask
+    | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask | SW_Fault_Mask
+    | SW_QuickStop_Mask | SW_SwitchOnDisabled_Mask;
+const uint16_t ReadyToSwitchOn_Pattern = SW_ReadyToSwitchOn_Mask
+    | SW_QuickStop_Mask;
 
-const uint16_t SwitchedOn_Mask = SW_ReadyToSwitchOn_Mask | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask | SW_Fault_Mask | SW_QuickStop_Mask | SW_SwitchOnDisabled_Mask;
-const uint16_t SwitchedOn_Pattern = SW_ReadyToSwitchOn_Mask | SW_SwitchedOn_Mask | SW_QuickStop_Mask;
+const uint16_t SwitchedOn_Mask = SW_ReadyToSwitchOn_Mask | SW_SwitchedOn_Mask
+    | SW_OperationEnabled_Mask | SW_Fault_Mask | SW_QuickStop_Mask
+    | SW_SwitchOnDisabled_Mask;
+const uint16_t SwitchedOn_Pattern = SW_ReadyToSwitchOn_Mask | SW_SwitchedOn_Mask
+    | SW_QuickStop_Mask;
 
-const uint16_t OperationEnabled_Mask = SW_ReadyToSwitchOn_Mask  |SW_SwitchedOn_Mask|SW_OperationEnabled_Mask|SW_Fault_Mask|SW_QuickStop_Mask|SW_SwitchOnDisabled_Mask;
-const uint16_t OperationEnabled_Pattern = SW_ReadyToSwitchOn_Mask | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask | SW_QuickStop_Mask;
+const uint16_t OperationEnabled_Mask = SW_ReadyToSwitchOn_Mask
+    | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask | SW_Fault_Mask
+    | SW_QuickStop_Mask | SW_SwitchOnDisabled_Mask;
+const uint16_t OperationEnabled_Pattern = SW_ReadyToSwitchOn_Mask
+    | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask | SW_QuickStop_Mask;
 
-const uint16_t Fault_Reaction_Mask = SW_ReadyToSwitchOn_Mask|SW_SwitchedOn_Mask|SW_OperationEnabled_Mask|SW_Fault_Mask|SW_SwitchOnDisabled_Mask;
-const uint16_t Fault_Reaction_Pattern = SW_Fault_Mask|SW_ReadyToSwitchOn_Mask|SW_SwitchedOn_Mask|SW_OperationEnabled_Mask;
+const uint16_t Fault_Reaction_Mask = SW_ReadyToSwitchOn_Mask
+    | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask | SW_Fault_Mask
+    | SW_SwitchOnDisabled_Mask;
+const uint16_t Fault_Reaction_Pattern = SW_Fault_Mask | SW_ReadyToSwitchOn_Mask
+    | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask;
 
-const uint16_t Fault_Mask = SW_ReadyToSwitchOn_Mask|SW_SwitchedOn_Mask|SW_OperationEnabled_Mask|SW_Fault_Mask|SW_SwitchOnDisabled_Mask;
+const uint16_t Fault_Mask = SW_ReadyToSwitchOn_Mask | SW_SwitchedOn_Mask
+    | SW_OperationEnabled_Mask | SW_Fault_Mask | SW_SwitchOnDisabled_Mask;
 const uint16_t Fault_Pattern = SW_Fault_Mask;
 
-const uint16_t QuickStopActive_Mask = SW_ReadyToSwitchOn_Mask|SW_SwitchedOn_Mask|SW_OperationEnabled_Mask|SW_Fault_Mask|SW_QuickStop_Mask|SW_SwitchOnDisabled_Mask;
-const uint16_t QuickStopActive_Pattern = SW_ReadyToSwitchOn_Mask | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask;
-
+const uint16_t QuickStopActive_Mask = SW_ReadyToSwitchOn_Mask
+    | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask | SW_Fault_Mask
+    | SW_QuickStop_Mask | SW_SwitchOnDisabled_Mask;
+const uint16_t QuickStopActive_Pattern = SW_ReadyToSwitchOn_Mask
+    | SW_SwitchedOn_Mask | SW_OperationEnabled_Mask;
 
 class ElmoDriver : public ECDriver {
  public:
-  enum ControlMode {PROFILE_POSITION = 1, PROFILE_VELOCITY = 2, PROFILE_CURRENT = 3, HOMING = 6, CYCLIC_CURRENT = 10, CYCLIC_VELOCITY = 9, CYCLIC_POSITION = 8};
-  enum ServoState {INVALID = 0, NOT_READY_TO_SWITCH_ON = 1, SWITCH_ON_DISABLED = 2, READY_TO_SWITCH_ON = 3, SWITCH_ON = 4, OPERATION_ENABLED = 5, QUICK_STOP_ACTIVE = 6, FAULT_REACTION_ACTIVE = 7, FAULT = 8};
+  enum ControlMode {
+    PROFILE_POSITION = 1,
+    PROFILE_VELOCITY = 2,
+    PROFILE_CURRENT = 3,
+    HOMING = 6,
+    CYCLIC_CURRENT = 10,
+    CYCLIC_VELOCITY = 9,
+    CYCLIC_POSITION = 8
+  };
+  enum ServoState {
+    INVALID = 0,
+    NOT_READY_TO_SWITCH_ON = 1,
+    SWITCH_ON_DISABLED = 2,
+    READY_TO_SWITCH_ON = 3,
+    SWITCH_ON = 4,
+    OPERATION_ENABLED = 5,
+    QUICK_STOP_ACTIVE = 6,
+    FAULT_REACTION_ACTIVE = 7,
+    FAULT = 8
+  };
 
-  ElmoDriver(const std::string &name)
-      : ECDriver(name),
-        statusword_pdo_(0),
-        position_pdo_(0),
-        velocity_pdo_(0),
-        current_pdo_(0),
-        controlword_pdo_(0),
-        mode_of_operation_pdo_(0),
-        position_command_pdo_(0),
-        velocity_command_pdo_(0),
-        current_command_pdo_(0),
-        control_mode_(HOMING),
-        enable_(false),
-        homing_(false),
-        reset_fault_(false),
-        homing_done_(true) {
-
-//        statusword_pdo_(0x6041, 0),
-//        position_pdo_(0x6064, 0),
-//        velocity_pdo_(0x606C, 0),
-//        current_pdo_(0x6077, 0),
-//        controlword_pdo_(0x6040, 0),
-//        mode_of_operation_pdo_(0x6060, 0),
-//        position_command_pdo_(0x607A, 0),
-//        velocity_command_pdo_(0x60FF, 0),
-//        current_command_pdo_(0x6071, 0),
+  explicit ElmoDriver(const std::string &name)
+  : ECDriver(name),
+    statusword_pdo_(0),
+    position_pdo_(0),
+    velocity_pdo_(0),
+    current_pdo_(0),
+    controlword_pdo_(0),
+    mode_of_operation_pdo_(0),
+    position_command_pdo_(0),
+    velocity_command_pdo_(0),
+    current_command_pdo_(0),
+    control_mode_(HOMING),
+    enable_(false),
+    homing_(false),
+    reset_fault_(false),
+    homing_done_(true) {
+    //        statusword_pdo_(0x6041, 0),
+        //        position_pdo_(0x6064, 0),
+    //        velocity_pdo_(0x606C, 0),
+    //        current_pdo_(0x6077, 0),
+    //        controlword_pdo_(0x6040, 0),
+    //        mode_of_operation_pdo_(0x6060, 0),
+    //        position_command_pdo_(0x607A, 0),
+    //        velocity_command_pdo_(0x60FF, 0),
+    //        current_command_pdo_(0x6071, 0),
 
     this->provides()->addPort("motor_position", motor_position_port_);
     this->provides()->addPort("motor_velocity", motor_velocity_port_);
     this->provides()->addPort("motor_current", motor_current_port_);
 
-    this->provides()->addPort("motor_position_command", motor_position_command_port_);
-    this->provides()->addPort("motor_velocity_command", motor_velocity_command_port_);
-    this->provides()->addPort("motor_current_command", motor_current_command_port_);
+    this->provides()->addPort("motor_position_command",
+                              motor_position_command_port_);
+    this->provides()->addPort("motor_velocity_command",
+                              motor_velocity_command_port_);
+    this->provides()->addPort("motor_current_command",
+                              motor_current_command_port_);
 
-
-    this->provides()->addAttribute("state", *((int*)&state_));
+    this->provides()->addAttribute("state", *(reinterpret_cast<int*> &state_));
     this->provides()->addAttribute("homing_done", homing_done_);
 
-    this->provides()->addOperation("beginHoming", &ElmoDriver::beginHoming, this, RTT::OwnThread);
-    this->provides()->addOperation("enable", &ElmoDriver::enable, this, RTT::OwnThread);
-    this->provides()->addOperation("disable", &ElmoDriver::disable, this, RTT::OwnThread);
-    this->provides()->addOperation("resetFault", &ElmoDriver::resetFault, this, RTT::OwnThread);
+     this->provides()->addOperation("beginHoming", &ElmoDriver::beginHoming, this, RTT::OwnThread);
+     this->provides()->addOperation("forceHomingDone", &ElmoDriver::forceHomingDone, this, RTT::OwnThread);
+     this->provides()->addOperation("enable", &ElmoDriver::enable, this, RTT::OwnThread);
+     this->provides()->addOperation("disable", &ElmoDriver::disable, this, RTT::OwnThread);
+     this->provides()->addOperation("resetFault", &ElmoDriver::resetFault, this, RTT::OwnThread);
   }
 
   ~ElmoDriver() {
   }
 
   virtual bool configureHook(const YAML::Node &cfg) {
-  
     int subnode;
 
     if (cfg["subnode"]) {
@@ -135,8 +174,7 @@ class ElmoDriver : public ECDriver {
     } else {
       subnode = 0;
     }
-  
-  
+
     if (cfg["interpolation_period"]) {
       YAML::Node intp = cfg["interpolation_period"];
       uint8_t value = intp["value"].as<int>();
@@ -145,7 +183,8 @@ class ElmoDriver : public ECDriver {
       slave_->addSDOConfig(0x60C2 + subnode * 0x0800, 1, value);
       slave_->addSDOConfig(0x60C2 + subnode * 0x0800, 2, index);
     } else {
-      RTT::log(RTT::Error) << "Driver require parameter interpolation_period" << RTT::endlog();
+      RTT::log(RTT::Error) << "Driver require parameter interpolation_period"
+          << RTT::endlog();
       return false;
     }
 
@@ -185,10 +224,14 @@ class ElmoDriver : public ECDriver {
     velocity_pdo_ = new ECPDOEntry<int32_t>(0x606C + subnode * 0x0800, 0);
     current_pdo_ = new ECPDOEntry<int16_t>(0x6077 + subnode * 0x0800, 0);
     controlword_pdo_ = new ECPDOEntry<int16_t>(0x6040 + subnode * 0x0800, 0);
-    mode_of_operation_pdo_ = new ECPDOEntry<uint8_t>(0x6060 + subnode * 0x0800, 0);
-    position_command_pdo_ = new ECPDOEntry<int32_t>(0x607A + subnode * 0x0800, 0);
-    velocity_command_pdo_ = new ECPDOEntry<int32_t>(0x60FF + subnode * 0x0800, 0);
-    current_command_pdo_ = new ECPDOEntry<int16_t>(0x6071 + subnode * 0x0800, 0);
+    mode_of_operation_pdo_ = new ECPDOEntry<uint8_t>(0x6060 + subnode * 0x0800,
+                                                     0);
+    position_command_pdo_ = new ECPDOEntry<int32_t>(0x607A + subnode * 0x0800,
+                                                    0);
+    velocity_command_pdo_ = new ECPDOEntry<int32_t>(0x60FF + subnode * 0x0800,
+                                                    0);
+    current_command_pdo_ = new ECPDOEntry<int16_t>(0x6071 + subnode * 0x0800,
+                                                   0);
 
     this->addPDOEntry(statusword_pdo_);
     this->addPDOEntry(position_pdo_);
@@ -229,7 +272,6 @@ class ElmoDriver : public ECDriver {
         homing_done_ = true;
       }
     }
-
   }
 
   virtual void updateOutputs() {
@@ -255,11 +297,11 @@ class ElmoDriver : public ECDriver {
         }
         break;
       case OPERATION_ENABLED:
-          if (enable_) {
-            cw = 0x0f;
-          } else {
-            cw = 0x07;
-          }
+        if (enable_) {
+          cw = 0x0f;
+        } else {
+          cw = 0x07;
+        }
         break;
       case QUICK_STOP_ACTIVE:
         enable_ = false;
@@ -268,13 +310,13 @@ class ElmoDriver : public ECDriver {
         enable_ = false;
         break;
       case FAULT:
-          enable_ = false;
-          if (reset_fault_) {
-            cw = 0x80;
-            reset_fault_ = false;
-          } else {
-            cw = 0;
-          }
+        enable_ = false;
+        if (reset_fault_) {
+          cw = 0x80;
+          reset_fault_ = false;
+        } else {
+          cw = 0;
+        }
         break;
       default:
         break;
@@ -328,7 +370,6 @@ class ElmoDriver : public ECDriver {
   }
 
  private:
-
   bool enable() {
     if (state_ == SWITCH_ON) {
       enable_ = true;
@@ -350,9 +391,17 @@ class ElmoDriver : public ECDriver {
         homing_ = true;
       }
     } else {
-      RTT::log(RTT::Error) << "Drive not configured for homing" << RTT::endlog();
+      RTT::log(RTT::Error) << "Drive not configured for homing"
+          << RTT::endlog();
     }
     return homing_;
+  }
+
+  bool forceHomingDone() {
+    if (state_ == OPERATION_ENABLED) {
+      homing_done_ = true;
+    }
+    return homing_done_;
   }
 
   bool resetFault() {
@@ -367,13 +416,15 @@ class ElmoDriver : public ECDriver {
   ServoState getState(int16_t statusword) {
     if ((statusword & NotReadyToSwitchOn_Mask) == NotReadyToSwitchOn_Pattern) {
       return NOT_READY_TO_SWITCH_ON;
-    } else if ((statusword & SwitchOnDisabled_Mask) == SwitchOnDisabled_Pattern) {
+    } else if ((statusword & SwitchOnDisabled_Mask)
+        == SwitchOnDisabled_Pattern) {
       return SWITCH_ON_DISABLED;
     } else if ((statusword & ReadyToSwitchOn_Mask) == ReadyToSwitchOn_Pattern) {
       return READY_TO_SWITCH_ON;
     } else if ((statusword & SwitchedOn_Mask) == SwitchedOn_Pattern) {
       return SWITCH_ON;
-    } else if ((statusword & OperationEnabled_Mask) == OperationEnabled_Pattern) {
+    } else if ((statusword & OperationEnabled_Mask)
+        == OperationEnabled_Pattern) {
       return OPERATION_ENABLED;
     } else if ((statusword & QuickStopActive_Mask) == QuickStopActive_Pattern) {
       return QUICK_STOP_ACTIVE;
