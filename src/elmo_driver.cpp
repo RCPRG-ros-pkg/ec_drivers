@@ -153,7 +153,7 @@ class ElmoDriver : public ECDriver {
     this->provides()->addPort("motor_current_command",
                               motor_current_command_port_);
 
-    this->provides()->addAttribute("state", *(reinterpret_cast<int*> &state_));
+    this->provides()->addAttribute("state", *((int*)&state_));
     this->provides()->addAttribute("homing_done", homing_done_);
 
      this->provides()->addOperation("beginHoming", &ElmoDriver::beginHoming, this, RTT::OwnThread);
