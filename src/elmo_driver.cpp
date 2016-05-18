@@ -216,9 +216,11 @@ class ElmoDriver : public ECDriver {
     if (cfg["dio_type"]) {
       std::string mode_str = cfg["dio_type"].as<std::string>();
       if (mode_str == "amc") {
-        digital_inputs16_pdo_ = new ECPDOEntry<uint16_t>(0x2023 + subnode * 0x0800, 0);
+        digital_inputs16_pdo_ = new ECPDOEntry<uint16_t>(0x2023 + subnode * 0x0800, 1);
+        this->addPDOEntry(digital_inputs16_pdo_);
       } else if (mode_str == "elmo") {
         digital_inputs32_pdo_ = new ECPDOEntry<uint32_t>(0x60fd, 0);
+        this->addPDOEntry(digital_inputs32_pdo_);
       } else {
         return false;
       }
