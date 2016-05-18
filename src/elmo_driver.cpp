@@ -122,6 +122,8 @@ class ElmoDriver : public ECDriver {
     position_pdo_(0),
     velocity_pdo_(0),
     current_pdo_(0),
+    digital_inputs16_pdo_(0),
+    digital_inputs32_pdo_(0),
     controlword_pdo_(0),
     mode_of_operation_pdo_(0),
     position_command_pdo_(0),
@@ -132,19 +134,11 @@ class ElmoDriver : public ECDriver {
     homing_(false),
     reset_fault_(false),
     homing_done_(true) {
-    //        statusword_pdo_(0x6041, 0),
-        //        position_pdo_(0x6064, 0),
-    //        velocity_pdo_(0x606C, 0),
-    //        current_pdo_(0x6077, 0),
-    //        controlword_pdo_(0x6040, 0),
-    //        mode_of_operation_pdo_(0x6060, 0),
-    //        position_command_pdo_(0x607A, 0),
-    //        velocity_command_pdo_(0x60FF, 0),
-    //        current_command_pdo_(0x6071, 0),
 
     this->provides()->addPort("motor_position", motor_position_port_);
     this->provides()->addPort("motor_velocity", motor_velocity_port_);
     this->provides()->addPort("motor_current", motor_current_port_);
+    this->provides()->addPort("digital_inputs", digital_inputs_port_);
 
     this->provides()->addPort("motor_position_command",
                               motor_position_command_port_);
@@ -156,11 +150,11 @@ class ElmoDriver : public ECDriver {
     this->provides()->addAttribute("state", *((int*)&state_));
     this->provides()->addAttribute("homing_done", homing_done_);
 
-     this->provides()->addOperation("beginHoming", &ElmoDriver::beginHoming, this, RTT::OwnThread);
-     this->provides()->addOperation("forceHomingDone", &ElmoDriver::forceHomingDone, this, RTT::OwnThread);
-     this->provides()->addOperation("enable", &ElmoDriver::enable, this, RTT::OwnThread);
-     this->provides()->addOperation("disable", &ElmoDriver::disable, this, RTT::OwnThread);
-     this->provides()->addOperation("resetFault", &ElmoDriver::resetFault, this, RTT::OwnThread);
+    this->provides()->addOperation("beginHoming", &ElmoDriver::beginHoming, this, RTT::OwnThread);
+    this->provides()->addOperation("forceHomingDone", &ElmoDriver::forceHomingDone, this, RTT::OwnThread);
+    this->provides()->addOperation("enable", &ElmoDriver::enable, this, RTT::OwnThread);
+    this->provides()->addOperation("disable", &ElmoDriver::disable, this, RTT::OwnThread);
+    this->provides()->addOperation("resetFault", &ElmoDriver::resetFault, this, RTT::OwnThread);
   }
 
   ~ElmoDriver() {
@@ -219,6 +213,17 @@ class ElmoDriver : public ECDriver {
       return false;
     }
 
+    if (cfg["dio_type"]) {
+      std::string mode_str = cfg["dio_type"].as<std::string>();
+      if (mode_str == "amc") {
+        digital_inputs16_pdo_ = new ECPDOEntry<uint16_t>(0x2023 + subnode * 0x0800, 0);
+      } else if (mode_str == "elmo") {
+        digital_inputs32_pdo_ = new ECPDOEntry<uint32_t>(0x60fd, 0);
+      } else {
+        return false;
+      }
+    }
+
     statusword_pdo_ = new ECPDOEntry<int16_t>(0x6041 + subnode * 0x0800, 0);
     position_pdo_ = new ECPDOEntry<int32_t>(0x6064 + subnode * 0x0800, 0);
     velocity_pdo_ = new ECPDOEntry<int32_t>(0x606C + subnode * 0x0800, 0);
@@ -265,6 +270,14 @@ class ElmoDriver : public ECDriver {
 
     motor_position_port_.write(pos);
     motor_velocity_port_.write(vel);
+
+    if (digital_inputs16_pdo_) {
+      uint32_t di = digital_inputs16_pdo_->read();
+      digital_inputs_port_.write(di);
+    } else if (digital_inputs32_pdo_) {
+      uint32_t di = digital_inputs32_pdo_->read();
+      digital_inputs_port_.write(di);
+    }
 
     if (homing_) {
       if ((statusword & 0x3400) == 0x1400) {
@@ -441,6 +454,8 @@ class ElmoDriver : public ECDriver {
   ECPDOEntry<int32_t> *position_pdo_;
   ECPDOEntry<int32_t> *velocity_pdo_;
   ECPDOEntry<int16_t> *current_pdo_;
+  ECPDOEntry<uint16_t> *digital_inputs16_pdo_;
+  ECPDOEntry<uint32_t> *digital_inputs32_pdo_;
 
   ECPDOEntry<int16_t> *controlword_pdo_;
   ECPDOEntry<uint8_t> *mode_of_operation_pdo_;
@@ -451,6 +466,7 @@ class ElmoDriver : public ECDriver {
   RTT::OutputPort<double> motor_position_port_;
   RTT::OutputPort<double> motor_velocity_port_;
   RTT::OutputPort<double> motor_current_port_;
+  RTT::OutputPort<uint32_t> digital_inputs_port_;
 
   RTT::InputPort<double> motor_position_command_port_;
   RTT::InputPort<double> motor_velocity_command_port_;
