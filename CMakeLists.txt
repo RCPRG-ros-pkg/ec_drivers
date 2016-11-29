@@ -17,6 +17,9 @@ target_link_libraries(ec_elmo_driver ${catkin_LIBRARIES} ${USE_OROCOS_LIBRARIES}
 orocos_service(ec_ati_driver src/ati_driver.cpp)
 target_link_libraries(ec_ati_driver ${catkin_LIBRARIES} ${USE_OROCOS_LIBRARIES})
 
+orocos_service(ec_imu_driver src/imu_driver.cpp)
+target_link_libraries(ec_imu_driver ${catkin_LIBRARIES} ${USE_OROCOS_LIBRARIES})
+
 orocos_generate_package(
   DEPENDS rtt_ros ec_hardware
 )

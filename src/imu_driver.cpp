@@ -28,10 +28,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ati_driver.h"
+#include "imu_driver.h"
 #include <string>
 
-ATIDriver::ATIDriver(const std::string &name)
+IMUDriver::IMUDriver(const std::string &name)
     : ECDriver(name),
       force_x_pdo_(0x6000, 1),
       force_y_pdo_(0x6000, 2),
@@ -44,18 +44,18 @@ ATIDriver::ATIDriver(const std::string &name)
       calib_(0),
       filter_(0) {
   this->provides()->addPort("wrench", wrench_port_);
-  this->provides()->addOperation("bias", &ATIDriver::bias, this,
+  this->provides()->addOperation("bias", &IMUDriver::bias, this,
                                  RTT::OwnThread);
-  this->provides()->addOperation("setCalibration", &ATIDriver::setCalib, this,
+  this->provides()->addOperation("setCalibrimuon", &IMUDriver::setCalib, this,
                                  RTT::OwnThread);
-  this->provides()->addOperation("setFilter", &ATIDriver::setFilter, this,
+  this->provides()->addOperation("setFilter", &IMUDriver::setFilter, this,
                                  RTT::OwnThread);
 }
 
-ATIDriver::~ATIDriver() {
+IMUDriver::~IMUDriver() {
 }
 
-bool ATIDriver::configureHook(const YAML::Node &cfg) {
+bool IMUDriver::configureHook(const YAML::Node &cfg) {
   this->addPDOEntry(&force_x_pdo_);
   this->addPDOEntry(&force_y_pdo_);
   this->addPDOEntry(&force_z_pdo_);
@@ -66,7 +66,7 @@ bool ATIDriver::configureHook(const YAML::Node &cfg) {
   return true;
 }
 
-void ATIDriver::updateInputs() {
+void IMUDriver::updateInputs() {
   int32_t fx, fy, fz, tx, ty, tz;
   geometry_msgs::Wrench wr;
 
@@ -89,7 +89,7 @@ void ATIDriver::updateInputs() {
   wrench_port_.write(wr);
 }
 
-void ATIDriver::updateOutputs() {
+void IMUDriver::updateOutputs() {
   int32_t cw1 = 0;
 
   if (bias_) {
@@ -104,11 +104,11 @@ void ATIDriver::updateOutputs() {
 }
 
 
-void ATIDriver::bias() {
+void IMUDriver::bias() {
   bias_ = true;
 }
 
-bool ATIDriver::setFilter(int32_t fl) {
+bool IMUDriver::setFilter(int32_t fl) {
   if (fl < 0 || fl > 8) {
     return false;
   } else {
@@ -117,7 +117,7 @@ bool ATIDriver::setFilter(int32_t fl) {
   }
 }
 
-bool ATIDriver::setCalib(int32_t cl) {
+bool IMUDriver::setCalib(int32_t cl) {
   if (cl < 0 || cl > 8) {
     return false;
   } else {
@@ -126,8 +126,8 @@ bool ATIDriver::setCalib(int32_t cl) {
   }
 }
 
-char ati_name[] = "ati_driver";
+char imu_name[] = "imu_driver";
 
-typedef ECDriverFactoryService<ati_name, ATIDriver> ATIDriverFactory;
+typedef ECDriverFactoryService<imu_name, IMUDriver> IMUDriverFactory;
 
-ORO_SERVICE_NAMED_PLUGIN(ATIDriverFactory, "ati_driver");
+ORO_SERVICE_NAMED_PLUGIN(IMUDriverFactory, "imu_driver");
