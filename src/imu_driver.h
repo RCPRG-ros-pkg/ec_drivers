@@ -38,6 +38,13 @@
 #include <ec_hardware/ECPDOEntry.h>
 #include <string>
 #include "geometry_msgs/Wrench.h"
+#include "sensor_msgs/Imu.h"
+#include <rtt_rosclock/rtt_rosclock.h>
+
+#define Pre300degpsec 72000
+#define Pre150degpsec 144000
+#define Pre75degpsec 288000
+
 
 class IMUDriver : public ECDriver {
  public:
@@ -77,19 +84,19 @@ class IMUDriver : public ECDriver {
 
   bool setCalib(int32_t cl);
 
-  ECPDOEntry<int32_t> force_x_pdo_;
-  ECPDOEntry<int32_t> force_y_pdo_;
-  ECPDOEntry<int32_t> force_z_pdo_;
-  ECPDOEntry<int32_t> torque_x_pdo_;
-  ECPDOEntry<int32_t> torque_y_pdo_;
-  ECPDOEntry<int32_t> torque_z_pdo_;
+  ECPDOEntry<int16_t> acceleration_x_pdo_;
+  ECPDOEntry<int16_t> acceleration_y_pdo_;
+  ECPDOEntry<int16_t> acceleration_z_pdo_;
+  ECPDOEntry<int16_t> rotation_x_pdo_;
+  ECPDOEntry<int16_t> rotation_y_pdo_;
+  ECPDOEntry<int16_t> rotation_z_pdo_;
 
-  ECPDOEntry<int32_t> control1_pdo_;
+  ECPDOEntry<int16_t> control1_pdo_;
 
-  RTT::OutputPort<geometry_msgs::Wrench> wrench_port_;
+  RTT::OutputPort<sensor_msgs::Imu> port_imu_msr_outport_;
 
   bool bias_;
-
+    double rangeScale;
   int32_t calib_;
   int32_t filter_;
 };
