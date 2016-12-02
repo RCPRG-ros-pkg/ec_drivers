@@ -31,65 +31,84 @@
 #include "imu_driver.h"
 #include <string>
 
+
 IMUDriver::IMUDriver(const std::string &name)
     : ECDriver(name),
-      force_x_pdo_(0x6000, 1),
-      force_y_pdo_(0x6000, 2),
-      force_z_pdo_(0x6000, 3),
-      torque_x_pdo_(0x6000, 4),
-      torque_y_pdo_(0x6000, 5),
-      torque_z_pdo_(0x6000, 6),
-      control1_pdo_(0x7010, 1),
+      acceleration_x_pdo_(0x2065, 0),
+      acceleration_y_pdo_(0x2066, 0),
+      acceleration_z_pdo_(0x2067, 0),
+      rotation_x_pdo_(0x2068, 0),
+      rotation_y_pdo_(0x2069, 0),
+      rotation_z_pdo_(0x206a, 0),
+      control1_pdo_(0x206b, 0),
       bias_(true),
       calib_(0),
       filter_(0) {
-  this->provides()->addPort("wrench", wrench_port_);
-  this->provides()->addOperation("bias", &IMUDriver::bias, this,
-                                 RTT::OwnThread);
-  this->provides()->addOperation("setCalibrimuon", &IMUDriver::setCalib, this,
-                                 RTT::OwnThread);
-  this->provides()->addOperation("setFilter", &IMUDriver::setFilter, this,
-                                 RTT::OwnThread);
+  this->provides()->addPort("IMU_Msr_OUTPORT", port_imu_msr_outport_);
+
+
 }
 
 IMUDriver::~IMUDriver() {
 }
 
 bool IMUDriver::configureHook(const YAML::Node &cfg) {
-  this->addPDOEntry(&force_x_pdo_);
-  this->addPDOEntry(&force_y_pdo_);
-  this->addPDOEntry(&force_z_pdo_);
-  this->addPDOEntry(&torque_x_pdo_);
-  this->addPDOEntry(&torque_y_pdo_);
-  this->addPDOEntry(&torque_z_pdo_);
+  uint16_t value = 0x2;
+  uint16_t value2 = 0x4;
+  rangeScale = Pre150degpsec;
+
+  this->addPDOEntry(&acceleration_x_pdo_);
+  this->addPDOEntry(&acceleration_y_pdo_);
+  this->addPDOEntry(&acceleration_z_pdo_);
+  this->addPDOEntry(&rotation_x_pdo_);
+  this->addPDOEntry(&rotation_y_pdo_);
+  this->addPDOEntry(&rotation_z_pdo_);
   this->addPDOEntry(&control1_pdo_);
+
+
+  if (cfg["range"]) {
+    value = cfg["range"].as<int>();
+    if(value==1)
+      rangeScale = Pre75degpsec;
+    if(value==2)
+      rangeScale = Pre150degpsec;
+    if(value==4)
+      rangeScale = Pre300degpsec;
+
+  }
+  slave_->addSDOConfig(0x2205, 0, value2);
+
+  slave_->addSDOConfig(0x2206, 0, value);
+
   return true;
 }
 
 void IMUDriver::updateInputs() {
-  int32_t fx, fy, fz, tx, ty, tz;
-  geometry_msgs::Wrench wr;
+  int16_t ax, ay, az, rx, ry, rz;
+  sensor_msgs::Imu wr;
 
-  fx = force_x_pdo_.read();
-  fy = force_y_pdo_.read();
-  fz = force_z_pdo_.read();
+  ax = acceleration_x_pdo_.read();
+  ay = acceleration_y_pdo_.read();
+  az = acceleration_z_pdo_.read();
 
-  tx = torque_x_pdo_.read();
-  ty = torque_y_pdo_.read();
-  tz = torque_z_pdo_.read();
+  rx = rotation_x_pdo_.read();
+  ry = rotation_y_pdo_.read();
+  rz = rotation_z_pdo_.read();
 
-  wr.force.x = static_cast<double>(fx / 1000000.0);
-  wr.force.y = static_cast<double>(fy / 1000000.0);
-  wr.force.z = static_cast<double>(fz / 1000000.0);
+  wr.linear_acceleration.x = static_cast<double>(ax) / 3003.003003003;
+  wr.linear_acceleration.y = static_cast<double>(ay) / 3003.003003003;
+  wr.linear_acceleration.z = static_cast<double>(az) / 3003.003003003;
 
-  wr.torque.x = static_cast<double>(tx / 1000000.0);
-  wr.torque.y = static_cast<double>(ty / 1000000.0);
-  wr.torque.z = static_cast<double>(tz / 1000000.0);
+  wr.angular_velocity.x = static_cast<double>(rx) / rangeScale;
+  wr.angular_velocity.y = static_cast<double>(ry) / rangeScale;
+  wr.angular_velocity.z = static_cast<double>(rz) / rangeScale;
 
-  wrench_port_.write(wr);
+  wr.header.stamp = rtt_rosclock::host_now();
+  port_imu_msr_outport_.write(wr);
 }
 
 void IMUDriver::updateOutputs() {
+  /*
   int32_t cw1 = 0;
 
   if (bias_) {
@@ -101,6 +120,7 @@ void IMUDriver::updateOutputs() {
   cw1 |= calib_ << 8;
 
   control1_pdo_.write(cw1);
+   */
 }
 
 
@@ -109,21 +129,25 @@ void IMUDriver::bias() {
 }
 
 bool IMUDriver::setFilter(int32_t fl) {
+  /*
   if (fl < 0 || fl > 8) {
     return false;
   } else {
     filter_ = fl;
     return true;
   }
+   */
 }
 
 bool IMUDriver::setCalib(int32_t cl) {
+  /*
   if (cl < 0 || cl > 8) {
     return false;
   } else {
     calib_ = cl;
     return true;
   }
+   */
 }
 
 char imu_name[] = "imu_driver";
