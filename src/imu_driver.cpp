@@ -31,7 +31,6 @@
 #include "imu_driver.h"
 #include <string>
 
-
 IMUDriver::IMUDriver(const std::string &name)
     : ECDriver(name),
       acceleration_x_pdo_(0x2065, 0),
@@ -56,7 +55,7 @@ bool IMUDriver::configureHook(const YAML::Node &cfg) {
   uint16_t value = 0x2;
   uint16_t value2 = 0x4;
   rangeScale = Pre150degpsec;
-
+  
   this->addPDOEntry(&acceleration_x_pdo_);
   this->addPDOEntry(&acceleration_y_pdo_);
   this->addPDOEntry(&acceleration_z_pdo_);
@@ -64,7 +63,6 @@ bool IMUDriver::configureHook(const YAML::Node &cfg) {
   this->addPDOEntry(&rotation_y_pdo_);
   this->addPDOEntry(&rotation_z_pdo_);
   this->addPDOEntry(&control1_pdo_);
-
 
   if (cfg["range"]) {
     value = cfg["range"].as<int>();
@@ -74,8 +72,14 @@ bool IMUDriver::configureHook(const YAML::Node &cfg) {
       rangeScale = Pre150degpsec;
     if(value==4)
       rangeScale = Pre300degpsec;
-
   }
+
+  if (cfg["frame_id"]) {
+    imu_frame_id_ = cfg["frame_id"].as<std::string>();
+  }else{
+    imu_frame_id_ = "imu_frame";
+  }
+
   slave_->addSDOConfig(0x2205, 0, value2);
 
   slave_->addSDOConfig(0x2206, 0, value);
@@ -87,6 +91,9 @@ void IMUDriver::updateInputs() {
   int16_t ax, ay, az, rx, ry, rz;
   sensor_msgs::Imu wr;
 
+  wr.orientation_covariance = {0.001, 0, 0, 0, 0.001, 0, 0, 0, 0.001};
+  wr.angular_velocity_covariance = {0.001, 0, 0, 0, 0.001, 0, 0, 0, 0.001};
+  wr.linear_acceleration_covariance = {0.001, 0, 0, 0, 0.001, 0, 0, 0, 0.001};
   ax = acceleration_x_pdo_.read();
   ay = acceleration_y_pdo_.read();
   az = acceleration_z_pdo_.read();
@@ -94,16 +101,17 @@ void IMUDriver::updateInputs() {
   rx = rotation_x_pdo_.read();
   ry = rotation_y_pdo_.read();
   rz = rotation_z_pdo_.read();
+  // (value / <scale from documentation>) * <to_m/s_factor>
+  wr.linear_acceleration.x = (static_cast<double>(ax) / 3003.003003003) * 9.80665 ;
+  wr.linear_acceleration.y = (static_cast<double>(ay) / 3003.003003003) * 9.80665 ;
+  wr.linear_acceleration.z = (static_cast<double>(az) / 3003.003003003) * 9.80665 ;
 
-  wr.linear_acceleration.x = static_cast<double>(ax) / 3003.003003003;
-  wr.linear_acceleration.y = static_cast<double>(ay) / 3003.003003003;
-  wr.linear_acceleration.z = static_cast<double>(az) / 3003.003003003;
-
-  wr.angular_velocity.x = static_cast<double>(rx) / rangeScale;
-  wr.angular_velocity.y = static_cast<double>(ry) / rangeScale;
-  wr.angular_velocity.z = static_cast<double>(rz) / rangeScale;
+  wr.angular_velocity.x = static_cast<double>(rx) * rangeScale;
+  wr.angular_velocity.y = static_cast<double>(ry) * rangeScale;
+  wr.angular_velocity.z = static_cast<double>(rz) * rangeScale;
 
   wr.header.stamp = rtt_rosclock::host_now();
+  wr.header.frame_id = imu_frame_id_;
   port_imu_msr_outport_.write(wr);
 }
 

@@ -7,7 +7,9 @@ project(ec_drivers)
 find_package(catkin REQUIRED COMPONENTS
   rtt_ros ec_hardware geometry_msgs
 )
-
+if(UNIX)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
+endif()
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(${USE_OROCOS_INCLUDE_DIRS})
 

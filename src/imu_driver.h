@@ -40,10 +40,12 @@
 #include "geometry_msgs/Wrench.h"
 #include "sensor_msgs/Imu.h"
 #include <rtt_rosclock/rtt_rosclock.h>
+#include <math.h>
 
-#define Pre300degpsec 72000
-#define Pre150degpsec 144000
-#define Pre75degpsec 288000
+// <scale from documentation> * <to_radian_factor>
+#define Pre300degpsec (0.05 * M_PI/180.0)
+#define Pre150degpsec (0.025 * M_PI/180.0)
+#define Pre75degpsec (0.0125 * M_PI/180.0)
 
 
 class IMUDriver : public ECDriver {
@@ -99,6 +101,8 @@ class IMUDriver : public ECDriver {
     double rangeScale;
   int32_t calib_;
   int32_t filter_;
+  // Storage for imu frame ID
+  std::string imu_frame_id_;
 };
 
 
