@@ -275,6 +275,8 @@ void ElmoDriver::updateOutputs() {
       case CYCLIC_POSITION:
         position_command_pdo_->write(position_pdo_->read());
         break;
+      default:
+        break;
     }
   } else {
     switch (control_mode_) {
@@ -295,6 +297,8 @@ void ElmoDriver::updateOutputs() {
         if (motor_position_command_port_.read(pos) == RTT::NewData) {
           position_command_pdo_->write(pos);
         }
+        break;
+      default:
         break;
     }
   }

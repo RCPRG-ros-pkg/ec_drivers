@@ -44,8 +44,6 @@ IMUDriver::IMUDriver(const std::string &name)
       calib_(0),
       filter_(0) {
   this->provides()->addPort("IMU_Msr_OUTPORT", port_imu_msr_outport_);
-
-
 }
 
 IMUDriver::~IMUDriver() {
@@ -55,7 +53,7 @@ bool IMUDriver::configureHook(const YAML::Node &cfg) {
   uint16_t value = 0x2;
   uint16_t value2 = 0x4;
   rangeScale = Pre150degpsec;
-  
+
   this->addPDOEntry(&acceleration_x_pdo_);
   this->addPDOEntry(&acceleration_y_pdo_);
   this->addPDOEntry(&acceleration_z_pdo_);
@@ -66,17 +64,17 @@ bool IMUDriver::configureHook(const YAML::Node &cfg) {
 
   if (cfg["range"]) {
     value = cfg["range"].as<int>();
-    if(value==1)
+    if (value == 1)
       rangeScale = Pre75degpsec;
-    if(value==2)
+    if (value == 2)
       rangeScale = Pre150degpsec;
-    if(value==4)
+    if (value == 4)
       rangeScale = Pre300degpsec;
   }
 
   if (cfg["frame_id"]) {
     imu_frame_id_ = cfg["frame_id"].as<std::string>();
-  }else{
+  } else {
     imu_frame_id_ = "imu_frame";
   }
 
@@ -102,9 +100,12 @@ void IMUDriver::updateInputs() {
   ry = rotation_y_pdo_.read();
   rz = rotation_z_pdo_.read();
   // (value / <scale from documentation>) * <to_m/s_factor>
-  wr.linear_acceleration.x = (static_cast<double>(ax) / 3003.003003003) * 9.80665 ;
-  wr.linear_acceleration.y = (static_cast<double>(ay) / 3003.003003003) * 9.80665 ;
-  wr.linear_acceleration.z = (static_cast<double>(az) / 3003.003003003) * 9.80665 ;
+  wr.linear_acceleration.x = (static_cast<double>(ax) / 3003.003003003)
+      * 9.80665;
+  wr.linear_acceleration.y = (static_cast<double>(ay) / 3003.003003003)
+      * 9.80665;
+  wr.linear_acceleration.z = (static_cast<double>(az) / 3003.003003003)
+      * 9.80665;
 
   wr.angular_velocity.x = static_cast<double>(rx) * rangeScale;
   wr.angular_velocity.y = static_cast<double>(ry) * rangeScale;
@@ -117,20 +118,19 @@ void IMUDriver::updateInputs() {
 
 void IMUDriver::updateOutputs() {
   /*
-  int32_t cw1 = 0;
+   int32_t cw1 = 0;
 
-  if (bias_) {
-    cw1 |= 1;
-    bias_ = false;
-  }
+   if (bias_) {
+   cw1 |= 1;
+   bias_ = false;
+   }
 
-  cw1 |= filter_ << 4;
-  cw1 |= calib_ << 8;
+   cw1 |= filter_ << 4;
+   cw1 |= calib_ << 8;
 
-  control1_pdo_.write(cw1);
+   control1_pdo_.write(cw1);
    */
 }
-
 
 void IMUDriver::bias() {
   bias_ = true;
@@ -138,24 +138,26 @@ void IMUDriver::bias() {
 
 bool IMUDriver::setFilter(int32_t fl) {
   /*
-  if (fl < 0 || fl > 8) {
-    return false;
-  } else {
-    filter_ = fl;
-    return true;
-  }
+   if (fl < 0 || fl > 8) {
+   return false;
+   } else {
+   filter_ = fl;
+   return true;
+   }
    */
+  return false;  // temporary code to get rid of compilation warnings
 }
 
 bool IMUDriver::setCalib(int32_t cl) {
   /*
-  if (cl < 0 || cl > 8) {
-    return false;
-  } else {
-    calib_ = cl;
-    return true;
-  }
+   if (cl < 0 || cl > 8) {
+   return false;
+   } else {
+   calib_ = cl;
+   return true;
+   }
    */
+  return false;  // temporary code to get rid of compilation warnings
 }
 
 char imu_name[] = "imu_driver";
